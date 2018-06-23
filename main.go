@@ -46,13 +46,12 @@ func startUI(api *anaconda.TwitterApi) {
 }
 
 func updateTweets(tweetList *ui.List, api *anaconda.TwitterApi) {
-	stream := api.UserStream(url.Values{
-		// "with" specifies to include tweets from accounts the user follows
-		"with": []string{"true"},
-	})
-	// stream := api.PublicStreamFilter(url.Values{
-	// 	"track": []string{"#golang", "#python", "#100daysofcode"},
-	// })
+	v := url.Values{}
+	// Fetch extended tweets by default
+	v.Set("tweet_mode", "extended")
+	// "with" specifies to include tweets from accounts the user follows
+	v.Set("with", "true")
+	stream := api.UserStream(v)
 	defer stream.Stop()
 
 	tweets := make([]string, ui.TermHeight()-2, ui.TermHeight()-2)
@@ -79,10 +78,6 @@ func updateTweets(tweetList *ui.List, api *anaconda.TwitterApi) {
 		tm, _ := t.CreatedAtTime()
 		ts := tm.Format("15:04")
 		tt := t.FullText
-		// If it's an extended tweet (> 140 chars), use that text
-		if t.ExtendedTweet.FullText != "" {
-			tt = t.ExtendedTweet.FullText
-		}
 		// Unwrap t.co URLs
 		for _, u := range t.Entities.Urls {
 			tt = strings.Replace(tt, u.Url, u.Expanded_url, -1)
