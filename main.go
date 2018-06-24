@@ -65,11 +65,6 @@ func updateTweets(tweetList *ui.List, api *anaconda.TwitterApi) {
 			continue
 		}
 
-		// Ignore retweets
-		// if t.RetweetedStatus != nil {
-		// 	continue
-		// }
-
 		// Shift each tweet down one in the list
 		for j := len(tweets) - 1; j > 0; j-- {
 			tweets[j] = tweets[j-1]
@@ -86,7 +81,16 @@ func updateTweets(tweetList *ui.List, api *anaconda.TwitterApi) {
 		for _, m := range t.Entities.Media {
 			tt = strings.Replace(tt, m.Url, m.Expanded_url, -1)
 		}
-		tweets[0] = fmt.Sprintf("[%s](fg-green) [%s](fg-red): %s", ts, t.User.ScreenName, tt)
+
+		tu := t.User.ScreenName
+		var ru string
+		if t.RetweetedStatus != nil {
+			ru = fmt.Sprintf(" (via [%s](fg-magenta))", tu)
+			tu = t.RetweetedStatus.User.ScreenName
+			tt = t.RetweetedStatus.FullText
+		}
+
+		tweets[0] = fmt.Sprintf("[%s](fg-green) [%s](fg-red)%s: %s", ts, tu, ru, tt)
 		ui.Render(ui.Body)
 	}
 }
