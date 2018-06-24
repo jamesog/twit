@@ -40,9 +40,31 @@ func startUI(api *anaconda.TwitterApi) {
 		ui.StopLoop()
 	})
 
+	loadTimeline(tweetList, api)
 	go updateTweets(tweetList, api)
 
 	ui.Loop()
+}
+
+func loadTimeline(tweetList *ui.List, api *anaconda.TwitterApi) {
+	v := url.Values{}
+	v.Set("count", string(ui.TermHeight()-2))
+	timeline, err := api.GetHomeTimeline(v)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	tweets := make([]string, ui.TermHeight()-2, ui.TermHeight()-2)
+	tweetList.Items = tweets
+	ui.Render(ui.Body)
+
+	for t := len(timeline) - 1; t >= 0; t-- {
+		for i := len(tweets) - 1; i > 0; i-- {
+			tweets[i] = tweets[i-1]
+		}
+		tweets[0] = formatTweet(timeline[t])
+		ui.Render(ui.Body)
+	}
 }
 
 func updateTweets(tweetList *ui.List, api *anaconda.TwitterApi) {
@@ -54,9 +76,10 @@ func updateTweets(tweetList *ui.List, api *anaconda.TwitterApi) {
 	stream := api.UserStream(v)
 	defer stream.Stop()
 
-	tweets := make([]string, ui.TermHeight()-2, ui.TermHeight()-2)
-	tweetList.Items = tweets
-	ui.Render(ui.Body)
+	// Get the existing tweet list from termui.
+	// By the magic of Go arrays, the underlying array is modified when
+	// updating this slice, so no need to re-add the slice to the termui List.
+	tweets := tweetList.Items
 
 	for v := range stream.C {
 		// Ignore anything that isn't a tweet
