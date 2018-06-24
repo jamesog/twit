@@ -70,29 +70,33 @@ func updateTweets(tweetList *ui.List, api *anaconda.TwitterApi) {
 			tweets[j] = tweets[j-1]
 		}
 
-		tm, _ := t.CreatedAtTime()
-		ts := tm.Format("15:04")
-		tt := t.FullText
-		// Unwrap t.co URLs
-		tt = unwrapURLs(tt, t)
-		// Unwrap media
-		tt = unwrapMedia(tt, t)
-		tu := t.User.ScreenName
-
-		var ru string
-		if t.RetweetedStatus != nil {
-			ru = fmt.Sprintf(" (via [%s](fg-magenta))", tu)
-			tu = t.RetweetedStatus.User.ScreenName
-			tt = t.RetweetedStatus.FullText
-			// Unwrap t.co URLs
-			tt = unwrapURLs(tt, *t.RetweetedStatus)
-			// Unwrap media
-			tt = unwrapMedia(tt, *t.RetweetedStatus)
-		}
-
-		tweets[0] = fmt.Sprintf("[%s](fg-green) [%s](fg-red)%s: %s", ts, tu, ru, tt)
+		tweets[0] = formatTweet(t)
 		ui.Render(ui.Body)
 	}
+}
+
+func formatTweet(t anaconda.Tweet) string {
+	tm, _ := t.CreatedAtTime()
+	ts := tm.Format("15:04")
+	tt := t.FullText
+	// Unwrap t.co URLs
+	tt = unwrapURLs(tt, t)
+	// Unwrap media
+	tt = unwrapMedia(tt, t)
+	tu := t.User.ScreenName
+
+	var ru string
+	if t.RetweetedStatus != nil {
+		ru = fmt.Sprintf(" (via [%s](fg-magenta))", tu)
+		tu = t.RetweetedStatus.User.ScreenName
+		tt = t.RetweetedStatus.FullText
+		// Unwrap t.co URLs
+		tt = unwrapURLs(tt, *t.RetweetedStatus)
+		// Unwrap media
+		tt = unwrapMedia(tt, *t.RetweetedStatus)
+	}
+
+	return fmt.Sprintf("[%s](fg-green) [%s](fg-red)%s: %s", ts, tu, ru, tt)
 }
 
 // unwrapURLs unwraps (expands) t.co links to the original.

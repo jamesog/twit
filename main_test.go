@@ -6,23 +6,59 @@ import (
 	"github.com/ChimeraCoder/anaconda"
 )
 
-var testTweet = anaconda.Tweet{
-	FullText: "Test tweet https://t.co/test1 https://t.co/test2",
-	Entities: anaconda.Entities{
-		Urls: []struct {
-			Indices      []int  `json:"indices"`
-			Url          string `json:"url"`
-			Display_url  string `json:"display_url"`
-			Expanded_url string `json:"expanded_url"`
-		}{
-			{Url: "https://t.co/test1", Expanded_url: "https://example.com/test/1"},
-			{Url: "https://t.co/test2", Expanded_url: "https://example.com/test/2"},
+var (
+	testTweet = anaconda.Tweet{
+		CreatedAt: "Sat Feb 07 19:38:05 +0000 2009",
+		FullText:  "Test tweet https://t.co/test1 https://t.co/test2",
+		User: anaconda.User{
+			Name:       "James O'Gorman",
+			ScreenName: "jogbert",
 		},
-		Media: []anaconda.EntityMedia{
-			{Url: "https://t.co/test1", Expanded_url: "https://example.com/test/1"},
-			{Url: "https://t.co/test2", Expanded_url: "https://example.com/test/2"},
+		Entities: anaconda.Entities{
+			Urls: []struct {
+				Indices      []int  `json:"indices"`
+				Url          string `json:"url"`
+				Display_url  string `json:"display_url"`
+				Expanded_url string `json:"expanded_url"`
+			}{
+				{Url: "https://t.co/test1", Expanded_url: "https://example.com/test/1"},
+				{Url: "https://t.co/test2", Expanded_url: "https://example.com/test/2"},
+			},
+			Media: []anaconda.EntityMedia{
+				{Url: "https://t.co/test1", Expanded_url: "https://example.com/test/1"},
+				{Url: "https://t.co/test2", Expanded_url: "https://example.com/test/2"},
+			},
 		},
-	},
+	}
+
+	testRetweet = anaconda.Tweet{
+		CreatedAt: "Sat Feb 07 20:38:05 +0000 2009",
+		FullText:  "RT @jogbert: Test tweet https://t.co/test1 https://t.co/test2",
+		User: anaconda.User{
+			Name:       "Ryan Carter",
+			ScreenName: "vaelen",
+		},
+		RetweetedStatus: &testTweet,
+	}
+)
+
+func TestFormatTweet(t *testing.T) {
+	t.Run("Tweet", func(t *testing.T) {
+		want := "[19:38](fg-green) [jogbert](fg-red): Test tweet https://example.com/test/1 https://example.com/test/2"
+		got := formatTweet(testTweet)
+		if want != got {
+			t.Errorf("want %q, got %q", want, got)
+		}
+	})
+
+	t.Run("Retweet", func(t *testing.T) {
+		want := "[20:38](fg-green) [jogbert](fg-red) (via [vaelen](fg-magenta)): Test tweet https://example.com/test/1 https://example.com/test/2"
+		got := formatTweet(testRetweet)
+		if want != got {
+			t.Errorf("want %q, got %q", want, got)
+		}
+	})
+
 }
 
 func TestUnwrapURLs(t *testing.T) {
