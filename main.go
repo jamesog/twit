@@ -74,23 +74,40 @@ func updateTweets(tweetList *ui.List, api *anaconda.TwitterApi) {
 		ts := tm.Format("15:04")
 		tt := t.FullText
 		// Unwrap t.co URLs
-		for _, u := range t.Entities.Urls {
-			tt = strings.Replace(tt, u.Url, u.Expanded_url, -1)
-		}
+		tt = unwrapURLs(tt, t)
 		// Unwrap media
-		for _, m := range t.Entities.Media {
-			tt = strings.Replace(tt, m.Url, m.Expanded_url, -1)
-		}
-
+		tt = unwrapMedia(tt, t)
 		tu := t.User.ScreenName
+
 		var ru string
 		if t.RetweetedStatus != nil {
 			ru = fmt.Sprintf(" (via [%s](fg-magenta))", tu)
 			tu = t.RetweetedStatus.User.ScreenName
 			tt = t.RetweetedStatus.FullText
+			// Unwrap t.co URLs
+			tt = unwrapURLs(tt, *t.RetweetedStatus)
+			// Unwrap media
+			tt = unwrapMedia(tt, *t.RetweetedStatus)
 		}
 
 		tweets[0] = fmt.Sprintf("[%s](fg-green) [%s](fg-red)%s: %s", ts, tu, ru, tt)
 		ui.Render(ui.Body)
 	}
+}
+
+// unwrapURLs unwraps (expands) t.co links to the original.
+func unwrapURLs(text string, t anaconda.Tweet) string {
+	for _, u := range t.Entities.Urls {
+		text = strings.Replace(text, u.Url, u.Expanded_url, -1)
+	}
+	return text
+}
+
+// unwrapMedia unwraps (expands) media (embedded photo, GIF, etc.) links from
+// t.co to the original.
+func unwrapMedia(text string, t anaconda.Tweet) string {
+	for _, m := range t.Entities.Media {
+		text = strings.Replace(text, m.Url, m.Expanded_url, -1)
+	}
+	return text
 }

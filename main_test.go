@@ -2,7 +2,50 @@ package main
 
 import (
 	"testing"
+
+	"github.com/ChimeraCoder/anaconda"
 )
+
+func TestUnwrapURLs(t *testing.T) {
+	tweet := anaconda.Tweet{
+		FullText: "Test tweet https://t.co/test1 https://t.co/test2",
+		Entities: anaconda.Entities{
+			Urls: []struct {
+				Indices      []int  `json:"indices"`
+				Url          string `json:"url"`
+				Display_url  string `json:"display_url"`
+				Expanded_url string `json:"expanded_url"`
+			}{
+				{Url: "https://t.co/test1", Expanded_url: "https://example.com/test/1"},
+				{Url: "https://t.co/test2", Expanded_url: "https://example.com/test/2"},
+			},
+		},
+	}
+
+	want := "Test tweet https://example.com/test/1 https://example.com/test/2"
+	got := unwrapURLs(tweet.FullText, tweet)
+	if want != got {
+		t.Errorf("want %q, got %q", want, got)
+	}
+}
+
+func TestUnwrapMedia(t *testing.T) {
+	tweet := anaconda.Tweet{
+		FullText: "Test tweet https://t.co/test1 https://t.co/test2",
+		Entities: anaconda.Entities{
+			Media: []anaconda.EntityMedia{
+				{Url: "https://t.co/test1", Expanded_url: "https://example.com/test/1"},
+				{Url: "https://t.co/test2", Expanded_url: "https://example.com/test/2"},
+			},
+		},
+	}
+
+	want := "Test tweet https://example.com/test/1 https://example.com/test/2"
+	got := unwrapMedia(tweet.FullText, tweet)
+	if want != got {
+		t.Errorf("want %q, got %q", want, got)
+	}
+}
 
 // Some small benchmarks so I could test the most efficient way of updating a
 // slice.
